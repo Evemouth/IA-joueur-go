@@ -2,16 +2,20 @@ def heuristic(board):
     score = 0
     for line in range(board._BOARDSIZE):
         for case in range(board._BOARDSIZE):
-            if board.board[line][case] == board._BLACK:
+            p = board[board.flatten((case, board._BOARDSIZE - line - 1))]
+            if p == board._BLACK:
                 score += 1
-            elif board.board[line][case] == board._WHITE:
+            elif p == board._WHITE:
                 score -= 1
     return score
 
 def deroulementAlphaBeta(board, depth, alpha, beta, player):
     '''Déroulement d'une partie de GO avec l'algorithme alpha-beta.'''
     if depth == 0:
-        return heuristic(board)
+        if player == board._BLACK:
+            return heuristic(board)
+        else :
+            return -heuristic(board)
     elif board.is_game_over():
         if player == board._BLACK and board.winner() == board._BLACK:
             return float('inf')
@@ -20,9 +24,9 @@ def deroulementAlphaBeta(board, depth, alpha, beta, player):
         return float('-inf') 
     
     else:
-        if player == board._BLACK: # minimiser
+        if player == board._WHITE: # minimiser
             value = float('inf')
-            for move in board.legal_moves:
+            for move in board.legal_moves():
                 board.push(move)
                 value = min(value, deroulementAlphaBeta(board, depth - 1, alpha, beta, board._WHITE))
                 board.pop()
@@ -32,7 +36,7 @@ def deroulementAlphaBeta(board, depth, alpha, beta, player):
 
         else: # maximiser
             value = float('-inf')
-            for move in board.legal_moves:
+            for move in board.legal_moves():
                 board.push(move)
                 value = max(value, deroulementAlphaBeta(board, depth - 1, alpha, beta, board._BLACK))
                 board.pop()
@@ -49,9 +53,9 @@ def find_best_move(board, depth):
     alpha = float('-inf')
     beta = float('inf')
     
-    for move in board.legal_moves:
+    for move in board.legal_moves():
         board.push(move)
-        eval = deroulementAlphaBeta(board, depth - 1, alpha, beta, not board.turn)
+        eval = deroulementAlphaBeta(board, depth - 1, alpha, beta, board._nextPlayer)
         board.pop()
         
         if eval > max_eval:

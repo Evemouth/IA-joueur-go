@@ -9,6 +9,7 @@ import time
 import Goban 
 from random import choice
 from playerInterface import *
+import methods
 
 class myPlayer(PlayerInterface):
     ''' Example of a random player for the go. The only tricky part is to be able to handle
@@ -28,8 +29,7 @@ class myPlayer(PlayerInterface):
         if self._board.is_game_over():
             print("Referee told me to play but the game is over!")
             return "PASS" 
-        moves = self._board.legal_moves() # Dont use weak_legal_moves() here!
-        move = choice(moves) 
+        move = methods.find_best_move(self._board, 3) 
         self._board.push(move)
 
         # New here: allows to consider internal representations of moves
