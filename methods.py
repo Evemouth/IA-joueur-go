@@ -41,3 +41,21 @@ def deroulementAlphaBeta(board, depth, alpha, beta, player):
                 alpha = max(alpha, value)
         
     return value
+
+def find_best_move(board, depth):
+    '''Trouve le meilleur coup pour le joueur courant en utilisant l'algorithme alpha-beta.'''
+    best_move = None
+    max_eval = float('-inf')
+    alpha = float('-inf')
+    beta = float('inf')
+    
+    for move in board.legal_moves:
+        board.push(move)
+        eval = deroulementAlphaBeta(board, depth - 1, alpha, beta, not board.turn)
+        board.pop()
+        
+        if eval > max_eval:
+            max_eval = eval
+            best_move = move
+            
+    return best_move
