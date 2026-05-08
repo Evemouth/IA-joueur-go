@@ -23,7 +23,7 @@ class myPlayer(PlayerInterface):
         self._mycolor = None
 
     def getPlayerName(self):
-        return "Random Player"
+        return "Mathelin'eirb Player"
 
     def getPlayerMove(self):
         if self._board.is_game_over():
