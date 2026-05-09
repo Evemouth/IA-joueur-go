@@ -11,6 +11,7 @@ from random import choice
 from playerInterface import *
 import methods
 import copy
+import json
 
 class myPlayer(PlayerInterface):
     ''' Example of a random player for the go. The only tricky part is to be able to handle
@@ -22,7 +23,38 @@ class myPlayer(PlayerInterface):
     def __init__(self):
         self._board = Goban.Board()
         self._mycolor = None
-        self._remaining_time = 2700
+        self._remaining_time = 270
+
+        # Charge la bibliothèque d'ouvertures
+        self._opening_book = {}
+        try:
+            with open("plays-8x8.json", "r") as file:
+                games = json.load(file)
+                for game in games:
+                    moves = game["moves"]
+                    winner = game["winner"] # BLACK ou WHITE
+                    if winner == "BLACK":
+                        win_color = Goban.Board._BLACK
+                    else:
+                        win_color = Goban.Board._WHITE
+
+                    # Sauvegarde les 10 premiers coups
+                    for i in range(min(10, len(moves))):
+                        history = tuple(moves[:i]) # tuple immuable une fois créé → peut être utilisé comme clé de dictionnaire
+                        next_move = moves[i]
+                        
+                        if history not in self._opening_book:
+                            self._opening_book[history] = []
+                        
+                        if i % 2 == 0:
+                            turn_color = Goban.Board._BLACK 
+                        else:
+                            turn_color = Goban.Board._WHITE
+                        if turn_color == win_color: # si le coup mène à une victoire pour le joueur de ce tour, on le garde
+                            self._opening_book[history].append(next_move) 
+        
+        except Exception as e:
+            print("Erreur de chargement des ouvertures:", e)
 
     def getPlayerName(self):
         return "Mathelin'eirb Player"
@@ -32,6 +64,17 @@ class myPlayer(PlayerInterface):
             print("Referee told me to play but the game is over!")
             return "PASS" 
         
+        # Essaie de lire le coup depuis la bibliothèque
+        current_history = tuple(self._history)
+        if current_history in self._opening_book and len(self._opening_book[current_history]) > 0:
+            best_move_str = choice(self._opening_book[current_history])
+            print("Ouverture trouvée ! Je joue :", best_move_str)
+            self._history.append(best_move_str)
+            move_flat = Goban.Board.name_to_flat(best_move_str)
+            self._board.push(move_flat)
+            return best_move_str
+
+        # Si pas d'ouverture trouvée, on utilise alpha-beta
         start_time = time.time()
 
         nb_stones = 0
@@ -88,12 +131,14 @@ class myPlayer(PlayerInterface):
     def playOpponentMove(self, move):
         print("Opponent played ", move) # New here
         # the board needs an internal represetation to push the move.  Not a string
+        self._history.append(move) # ajout le coup de l'adversaire à l'historique
         self._board.push(Goban.Board.name_to_flat(move)) 
 
     def newGame(self, color):
         self._mycolor = color
         self._opponent = Goban.Board.flip(color)
         self._remaining_time = 2700
+        self._history = [] # historique des coups pioches
 
     def endGame(self, winner):
         if self._mycolor == winner:
