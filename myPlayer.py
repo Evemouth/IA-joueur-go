@@ -23,7 +23,7 @@ class myPlayer(PlayerInterface):
     def __init__(self):
         self._board = Goban.Board()
         self._mycolor = None
-        self._remaining_time = 270
+        self._remaining_time = 2700
 
         # Charge la bibliothèque d'ouvertures
         self._opening_book = {}
