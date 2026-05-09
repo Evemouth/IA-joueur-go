@@ -1,3 +1,5 @@
+import time
+
 def heuristic(board):
     score = 0
     for line in range(board._BOARDSIZE):
@@ -9,8 +11,11 @@ def heuristic(board):
                 score -= 1
     return score
 
-def deroulementAlphaBeta(board, depth, alpha, beta, is_player_max):
+def deroulementAlphaBeta(board, depth, alpha, beta, is_player_max, start_time, time_limit):
     '''Déroulement d'une partie de GO avec l'algorithme alpha-beta.'''
+    if time.time() - start_time > time_limit:
+        raise TimeOutException()
+    
     if depth == 0:
         return heuristic(board)
     
@@ -26,7 +31,7 @@ def deroulementAlphaBeta(board, depth, alpha, beta, is_player_max):
         value = float('-inf')
         for move in board.legal_moves():
             board.push(move)
-            value = max(value, deroulementAlphaBeta(board, depth - 1, alpha, beta, False))
+            value = max(value, deroulementAlphaBeta(board, depth - 1, alpha, beta, False, start_time, time_limit))
             board.pop()
             if value >= beta:
                 return value
@@ -37,14 +42,16 @@ def deroulementAlphaBeta(board, depth, alpha, beta, is_player_max):
         value = float('inf')
         for move in board.legal_moves():
             board.push(move)
-            value = min(value, deroulementAlphaBeta(board, depth - 1, alpha, beta, True))
+            value = min(value, deroulementAlphaBeta(board, depth - 1, alpha, beta, True, start_time, time_limit))
             board.pop()
             if alpha >= value:
                 return value
             beta = min(beta, value)            
-        return value
+        return value 
+class TimeOutException(Exception):
+    pass
 
-def find_best_move(board, depth):
+def find_best_move(board, depth, start_time, time_limit):
     '''Trouve le meilleur coup pour le joueur courant en utilisant l'algorithme alpha-beta.'''
     best_move = None
     alpha = float('-inf')
@@ -62,21 +69,26 @@ def find_best_move(board, depth):
         # Si la fonction joue pour Blanc, elle cherche un score inferieur
         best_eval = float('inf')
 
-    for move in board.legal_moves():
-        board.push(move)
-        # not is_player_max = adversaire
-        eval = deroulementAlphaBeta(board, depth - 1, alpha, beta, not is_player_max)
-        board.pop()
-        
-        if is_player_max: # Si on est Noir (max)
-            if eval > best_eval:
-                best_eval = eval
-                best_move = move
-            alpha = max(alpha, best_eval)
-        else: # Si on est Blanc (min)
-            if eval < best_eval:
-                best_eval = eval
-                best_move = move
-            beta = min(beta, best_eval)
-               
-    return best_move
+    try :
+        for move in board.legal_moves():
+            if time.time() - start_time > time_limit:
+                    raise TimeOutException()
+            board.push(move)
+            # not is_player_max = adversaire
+            eval = deroulementAlphaBeta(board, depth - 1, alpha, beta, not is_player_max, start_time, time_limit)
+            board.pop()
+            
+            if is_player_max: # Si on est Noir (max)
+                if eval > best_eval:
+                    best_eval = eval
+                    best_move = move
+                alpha = max(alpha, best_eval)
+            else: # Si on est Blanc (min)
+                if eval < best_eval:
+                    best_eval = eval
+                    best_move = move
+                beta = min(beta, best_eval)
+                
+        return best_move
+    except TimeOutException:
+        return None

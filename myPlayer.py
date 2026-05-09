@@ -10,6 +10,7 @@ import Goban
 from random import choice
 from playerInterface import *
 import methods
+import copy
 
 class myPlayer(PlayerInterface):
     ''' Example of a random player for the go. The only tricky part is to be able to handle
@@ -29,7 +30,29 @@ class myPlayer(PlayerInterface):
         if self._board.is_game_over():
             print("Referee told me to play but the game is over!")
             return "PASS" 
-        move = methods.find_best_move(self._board, 3) 
+        
+        start_time = time.time()
+        time_limit = 5.0 # 5 secondes par coup : à revoir pour faire la strat du prof selon l'avancement du jeu
+        
+        legals = self._board.legal_moves()
+        move = legals[0] # Si on a pas le temps de faire l'iterative deepening, on fait le 1er coup possible
+        depth = 1
+
+        while True:
+            time_spent = time.time() - start_time
+            if (time_spent > time_limit):
+                break
+            board_copy = copy.deepcopy(self._board)
+            new_move = methods.find_best_move(board_copy, depth, start_time, time_limit)
+
+            if new_move is None : # Si on a pas eu le temps de calculer jusqu'au bout
+                break
+
+            else : 
+                move = new_move
+                print("Fin calcul profondeur ", depth)
+                depth += 1
+        
         self._board.push(move)
 
         # New here: allows to consider internal representations of moves
